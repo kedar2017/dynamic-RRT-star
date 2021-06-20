@@ -164,20 +164,15 @@ void printJSON(Tree* tree){
     return;
 }
 
-void printPath(Tree* tree, Node* start, Node* end){
+std::vector<Node*> generatePath(Tree* tree, Node* start, Node* end){
     Node* parent = NULL;
     parent = end;
+    std::vector<Node*> pathToGoal;
     while (parent != start){
-        int posX = parent->pos->posX;
-        int posY = parent->pos->posY;
-        std::string value = "{"+std::to_string(posX)+","+std::to_string(posY)+"}";
-        std::string key = "";
+        pathToGoal.push_back(parent);
         parent = parent->parent;
-        posX = parent->pos->posX;
-        posY = parent->pos->posY;
-        key = "{"+std::to_string(posX)+","+std::to_string(posY)+"}";
     }
-    return;
+    return pathToGoal;
 }
 
 void run(Space* space){
@@ -208,7 +203,7 @@ void run(Space* space){
         removeNodefromSpace = expandTree(tree,nearestNode,randomNode);
         updateFreeSpace(space,removeNodefromSpace);
     }
-    printPath(tree,root, goalNode);
+    std::vector<Node*> pathtoGoal=generatePath(tree,root, goalNode);
     printTree(tree);
 }
 
