@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
 
 //From Geometry. Need to modify 
 bool radialPosCheck(Position* checkPoint, Position* center, int* radius){
-    float radialPos = sqrt(pow(checkPoint->posX -center->posX,2)+pow(checkPoint->posY -center->posY,2));
+    double radialPos = sqrt(pow(checkPoint->posX -center->posX,2)+pow(checkPoint->posY -center->posY,2));
     if (radialPos <= *radius){
         return false;
     }
@@ -28,7 +28,7 @@ bool radialPosCheck(Position* checkPoint, Position* center, int* radius){
 }
 
 bool radialPosCheckFloat(Position* checkPoint, Position* center, int radius){
-    float radialPos = sqrt(pow(checkPoint->posX -center->posX,2)+pow(checkPoint->posY -center->posY,2));
+    double radialPos = sqrt(pow(checkPoint->posX -center->posX,2)+pow(checkPoint->posY -center->posY,2));
     if (radialPos < radius){
         return true;
     }
@@ -50,23 +50,21 @@ Position crossProduct(Position vec1,Position vec2){
     return Position(0,vec1.posX*vec2.posY - vec1.posY*vec2.posX);
 }
 
-int lambdaCalc(Position* start,Position* end,Position* obstacle){
-    int nume = dotProduct(Position(end->posX-obstacle->posX,end->posY-obstacle->posY), Position(end->posX-start->posX,end->posY-start->posY));
-    int deno = dotProduct(Position(end->posX-start->posX,end->posY-start->posY),Position(end->posX-start->posX,end->posY-start->posY));
+double lambdaCalc(Position* start,Position* end,Position* obstacle){
+    double nume = dotProduct(Position(end->posX-obstacle->posX,end->posY-obstacle->posY), Position(end->posX-start->posX,end->posY-start->posY));
+    double deno = dotProduct(Position(end->posX-start->posX,end->posY-start->posY),Position(end->posX-start->posX,end->posY-start->posY));
     return nume/deno;
 }
 
-int distToLine(Obstacle* obs, Position* start, Position* end){
-    int x0 = obs->center->posX;
-    int x1 = start->posX;
-    int x2 = end->posX;
-    int y0 = obs->center->posY;
-    int y1 = start->posY;
-    int y2 = end->posY;
-
-    int nume = abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1));
-    int deno = sqrt(pow(x2-x1,2) + pow(y2-y1,2));
-
+double distToLine(Obstacle* obs, Position* start, Position* end){
+    double x0 = obs->center->posX;
+    double x1 = start->posX;
+    double x2 = end->posX;
+    double y0 = obs->center->posY;
+    double y1 = start->posY;
+    double y2 = end->posY;
+    double nume = abs((x2-x1)*(y1-y0) - (x1-x0)*(y2-y1));
+    double deno = sqrt(pow(x2-x1,2) + pow(y2-y1,2));
     return nume/deno;
 }
 
@@ -181,7 +179,7 @@ void run(Space* space){
     Node* root = new Node(pos);
     Tree* tree = new Tree(root);
     space->removeNodeFreeSpace(root);
-    int threshold = 9;
+    int threshold = 7;
     Node* goalNode = new Node(new Position(space->goal[0],space->goal[1]));
     int iterations = 0;
 
