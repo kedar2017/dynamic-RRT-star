@@ -1,16 +1,3 @@
-/*
-#include <iostream>
-#include <thread>
-#include <string>
-#include <memory>
-#include <unistd.h>
-using namespace std;
-
-int main(int argc, char* argv[]){
-    cout << "Starting program" << endl;
-    return 0;
-}
-*/
 
 #include <iostream>
 #include "fstream"
@@ -135,6 +122,41 @@ bool checkPointCollision(Space* space, Position* point){
     return false;
 }
 
+Node* chooseParent(Space* space, Tree* tree, Node* randomNode, Node* nearestNode){
+    Node* qMin = nearestNode;
+    double cMin = nearestNode->getCost() + tree->estDist(nearestNode,randomNode);
+    std::vector<Node*> nearestQ = tree->findNodesinRadius(randomNode);
+    std::vector<Node*>::iterator it;
+    for(it = nearestQ.begin(); it != nearestQ.end(); it++){
+        if(checkLineCollision(space, (*it)->getPos(), randomNode->getPos())){
+            continue;
+        }
+        double cNew = (*it)->getCost() + tree->estDist((*it),randomNode);
+        if(cNew < cMin){
+            cMin = cNew;
+            qMin = (*it);
+        }
+    }
+    return qMin;
+}
+
+Tree* reWire(Space* space, Tree* tree, Node* randomNode){
+    std::vector<Node*> nearestQ = tree->findNodesinRadius(randomNode);
+    std::vector<Node*>::iterator it;
+    for(it = nearestQ.begin(); it != nearestQ.end(); it++){
+        if(checkLineCollision(space, (*it)->getPos(), randomNode->getPos())){
+            continue;
+        }
+        double cNew = (randomNode)->getCost() + tree->estDist((*it),randomNode);
+        if(cNew < (*it)->getCost()){
+            (*it)->parent->children.erase(std::remove((*it)->parent->children.begin(), (*it)->parent->children.end(), (*it)), (*it)->parent->children.end());
+            (*it)->parent = randomNode;
+            tree->addNode(randomNode,(*it));
+        }
+    }
+    return tree;
+}
+
 void printTree(Tree* tree){
     Node* root = tree->root;
     std::vector<Node*> stack;
@@ -147,19 +169,6 @@ void printTree(Tree* tree){
             stack.insert(stack.begin(),child);
         }
     }
-}
-
-void printJSON(Tree* tree){
-    for (auto node: tree->treeNs){
-        int posX = node->pos->posX;
-        int posY = node->pos->posY;
-        std::string key = "{"+std::to_string(posX)+","+std::to_string(posY)+"}";
-        std::string value = "";
-        for (auto child:node->children){
-            value = value + "{"+std::to_string(child->pos->posX)+","+std::to_string(child->pos->posY)+"},";
-        }
-    }
-    return;
 }
 
 std::vector<Node*> generatePath(Tree* tree, Node* start, Node* end){
@@ -179,7 +188,7 @@ void run(Space* space){
     Node* root = new Node(pos);
     Tree* tree = new Tree(root);
     space->removeNodeFreeSpace(root);
-    int threshold = 7;
+    int threshold = 6;
     Node* goalNode = new Node(new Position(space->goal[0],space->goal[1]));
     int iterations = 0;
 
@@ -198,8 +207,10 @@ void run(Space* space){
         if (checkLineCollision(space, nearestNode->getPos(), removeNodefromSpace->getPos())){
             continue;
         }
-        removeNodefromSpace = expandTree(tree,nearestNode,randomNode);
+        Node* qMin = chooseParent(space,tree,removeNodefromSpace,nearestNode);
+        removeNodefromSpace = expandTree(tree,qMin,removeNodefromSpace);
         updateFreeSpace(space,removeNodefromSpace);
+        reWire(space,tree,removeNodefromSpace);
     }
     std::vector<Node*> pathtoGoal=generatePath(tree,root, goalNode);
     printTree(tree);
@@ -212,7 +223,7 @@ int main() {
 
     std::vector<int> start{70,10};
     std::vector<int> goal{10,70};
-    std::vector<std::vector<int>> obstacles{{15,60,60},{15,17,40},{20,50,80}};
+    std::vector<std::vector<int>> obstacles{{15,60,60},{15,17,40},{20,50,80},{30,80,40}};
     Space* space = new Space(winX, winY, start, goal, obstacles);
 
     run(space);

@@ -115,7 +115,7 @@ public:
     }
 
     Node* createNewNodetoNearest(Node* nearestNode, Node* randomNode){
-        double DELTA = 15.000;
+        double DELTA = 10.000;
         Node* addedNodeFromSpace;
         if (estDist(nearestNode, randomNode)<DELTA){
             addedNodeFromSpace = randomNode;
@@ -129,7 +129,7 @@ public:
     }
 
     Node* expandToRandom(Node* expandFrom, Node* randomNode){
-        double DELTA = 15.000;
+        double DELTA = 10.000;
         Node* addedNodeFromSpace;
         if (estDist(expandFrom, randomNode)<DELTA){
             addNode(expandFrom, randomNode);
@@ -142,6 +142,18 @@ public:
             addedNodeFromSpace = expandTo;
         }
         return addedNodeFromSpace;
+    }
+
+    std::vector<Node*> findNodesinRadius(Node* randomNode){
+        double ballRad = 10.000;
+        std::vector<Node*> nearQ;
+        for (Node* node:this->treeNs){
+            double  dist = estDist(node, randomNode);
+            if( dist < ballRad){
+                nearQ.push_back(node);
+            }
+        }
+        return nearQ;
     }
 
 };
