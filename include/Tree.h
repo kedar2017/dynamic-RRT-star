@@ -4,6 +4,8 @@
 #include "random"
 #include "map"
 
+#include "Parameters.h"
+
 class Position{
 public:
     double posX;
@@ -115,7 +117,7 @@ public:
     }
 
     Node* createNewNodetoNearest(Node* nearestNode, Node* randomNode){
-        double DELTA = 10.000;
+        //double DELTA = 10.000;
         Node* addedNodeFromSpace;
         if (estDist(nearestNode, randomNode)<DELTA){
             addedNodeFromSpace = randomNode;
@@ -129,7 +131,7 @@ public:
     }
 
     Node* expandToRandom(Node* expandFrom, Node* randomNode){
-        double DELTA = 10.000;
+        //double DELTA = 10.000;
         Node* addedNodeFromSpace;
         if (estDist(expandFrom, randomNode)<DELTA){
             addNode(expandFrom, randomNode);
@@ -145,7 +147,7 @@ public:
     }
 
     std::vector<Node*> findNodesinRadius(Node* randomNode){
-        double ballRad = 10.000;
+        //double ballRad = 6.000;
         std::vector<Node*> nearQ;
         for (Node* node:this->treeNs){
             double  dist = estDist(node, randomNode);

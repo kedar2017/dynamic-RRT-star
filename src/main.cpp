@@ -157,7 +157,7 @@ Tree* reWire(Space* space, Tree* tree, Node* randomNode){
     return tree;
 }
 
-void printTree(Tree* tree){
+void printTree(Tree* tree,int flag){
     Node* root = tree->root;
     std::vector<Node*> stack;
     stack.push_back(root);
@@ -165,31 +165,36 @@ void printTree(Tree* tree){
         Node* currN = stack.front();
         stack.erase(stack.begin());
         for (Node* child:currN->children) {
-            cv::line(image,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(255, 0, 0),2,cv::LINE_8);
+            if(flag==1)
+                cv::line(image,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(255, 0, 0),2,cv::LINE_8);
+            else
+                cv::line(image,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(0, 0, 255),2,cv::LINE_8);
             stack.insert(stack.begin(),child);
         }
     }
 }
 
-std::vector<Node*> generatePath(Tree* tree, Node* start, Node* end){
+std::vector<Node*> generatePath(Tree* tree, Node* start, Node* end, int flag){
     Node* parent = NULL;
     parent = end;
     std::vector<Node*> pathToGoal;
     while (parent != start){
+        if(flag ==1){
+            cv::line(image,cv::Point((parent->pos->posX)*5,(parent->pos->posY)*5),cv::Point((parent->parent->pos->posX)*5,(parent->parent->pos->posY)*5),cv::Scalar(255, 255, 255),8,cv::LINE_8);
+        }
+        else{
+            cv::line(image,cv::Point((parent->pos->posX)*5,(parent->pos->posY)*5),cv::Point((parent->parent->pos->posX)*5,(parent->parent->pos->posY)*5),cv::Scalar(255, 0, 255),3,cv::LINE_8);
+            //std::cout<<parent->getPos()->posX<<std::endl;
+            //std::cout<<parent->getPos()->posY<<std::endl;
+        }
         pathToGoal.push_back(parent);
         parent = parent->parent;
     }
     return pathToGoal;
 }
 
-void run(Space* space){
-
-    Position* pos = new Position(space->start[0],space->start[1]);
-    Node* root = new Node(pos);
-    Tree* tree = new Tree(root);
+void run(Space* space, Tree* tree, Node* root, Node* goalNode, int threshold, Node* minStartNode){
     space->removeNodeFreeSpace(root);
-    int threshold = 6;
-    Node* goalNode = new Node(new Position(space->goal[0],space->goal[1]));
     int iterations = 0;
 
     cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
@@ -209,29 +214,62 @@ void run(Space* space){
         }
         Node* qMin = chooseParent(space,tree,removeNodefromSpace,nearestNode);
         removeNodefromSpace = expandTree(tree,qMin,removeNodefromSpace);
+        if(iterations==1) minStartNode=qMin;
         updateFreeSpace(space,removeNodefromSpace);
         reWire(space,tree,removeNodefromSpace);
     }
-    std::vector<Node*> pathtoGoal=generatePath(tree,root, goalNode);
-    printTree(tree);
 }
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
+    //cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
+
     int winX = 100;
     int winY = 100;
-
     std::vector<int> start{70,10};
     std::vector<int> goal{10,70};
     std::vector<std::vector<int>> obstacles{{15,60,60},{15,17,40},{20,50,80},{30,80,40}};
-    Space* space = new Space(winX, winY, start, goal, obstacles);
+    Space* space = new Space(0,0,winX, winY, start, goal, obstacles);
+    Position* pos = new Position(space->start[0],space->start[1]);
+    Node* goalNode = new Node(new Position(space->goal[0],space->goal[1]));
+    Node* root = new Node(pos);
+    Tree* tree = new Tree(root);
 
-    run(space);
+    Node* minStartNode;
+    run(space, tree, root, goalNode, threshold, minStartNode);
+    printTree(tree,1);
+
+    std::vector<Node*> pathtoGoal=generatePath(tree,root,goalNode,1);
+
+    //Code to handle the movement of the robot in delta steps 
+    //Space* space = new Space(winX, winY, start, goal, obstacles);
+    
+    int deltaWinX = 10;
+    int deltaWinY = 10;
+    std::vector<int> startNew{int(pathtoGoal[30]->getPos()->posX),int(pathtoGoal[30]->getPos()->posY)};
+    std::vector<int> goalNew{int(pathtoGoal[20]->getPos()->posX),int(pathtoGoal[20]->getPos()->posY)};
+    int winXNew = std::max(startNew[0],goalNew[0])+deltaWinX;
+    int winYNew = std::max(startNew[1],goalNew[1])+deltaWinY;
+    int startX = std::min(startNew[0],goalNew[0])-deltaWinX;
+    int startY = std::min(startNew[1],goalNew[1])-deltaWinY;
+    std::vector<std::vector<int>> obstaclesNew{{15,60,60},{15,17,40},{20,50,80},{30,80,40},{3,int(pathtoGoal[25]->getPos()->posX),int(pathtoGoal[25]->getPos()->posY)}};
+    Space* spaceNew = new Space(startX, startY, winXNew, winYNew, startNew, goalNew, obstaclesNew);
+    Position* posNew = new Position(spaceNew->start[0],spaceNew->start[1]);
+    Node* goalNodeNew = new Node(new Position(spaceNew->goal[0],spaceNew->goal[1]));
+    Node* rootNew = new Node(posNew);
+    Tree* treeNew = new Tree(rootNew);
+    run(spaceNew, treeNew, rootNew, goalNodeNew,3,minStartNode);
+    printTree(treeNew,2);
+
+    std::vector<Node*> pathtoGoalNew=generatePath(treeNew,rootNew,goalNodeNew,2);
 
     int radiusCircle = 30;
     cv::Scalar colorCircle2(0,100,0);
     cv::circle(image,cv::Point(5*start[0],5*start[1]), radiusCircle, colorCircle2, cv::FILLED);
     cv::circle(image,cv::Point(5*goal[0],5*goal[1]), radiusCircle, colorCircle2, cv::FILLED);
+
+    cv::circle(image,cv::Point(5*spaceNew->obstacles[4]->center->posX,5*spaceNew->obstacles[4]->center->posY), 7, colorCircle2, cv::FILLED);
+
     cv::imshow( "Display window", image );
     cv::waitKey(0);
     return 0;

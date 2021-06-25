@@ -14,14 +14,14 @@ public:
     std::vector<std::vector<int> > points;
     std::vector<Obstacle*> obstacles;
 
-    Space(int x, int y, std::vector<int> start, std::vector<int> goal, std::vector<std::vector<int>> obst){
+    Space(int startX,int startY,int x, int y, std::vector<int> start, std::vector<int> goal, std::vector<std::vector<int>> obst){
         this->winX = x;
         this->winY = y;
         this->start = start;
         this->goal = goal;
 
-        for (int i = 0; i < winX; ++i) {
-            for (int j = 0; j < winY; ++j){
+        for (int i = startX; i < winX; ++i) {
+            for (int j = startY; j < winY; ++j){
                 this->points.push_back({i,j});
             }
         }
