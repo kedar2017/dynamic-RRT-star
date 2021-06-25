@@ -1,5 +1,5 @@
 
 # dynamic-RRT-star
 
-! [Sample dynamic obstacle avoidance using RRT* replanning ] (https://github.com/kedar2017/dynamic-RRT-star/blob/main/Sample_Dynamic_Obstacle_Dodge.png)
+! [Sample dynamic obstacle avoidance using RRT* replanning ] (<img width="496" alt="Screen Shot 2021-06-25 at 2 06 08 PM" src="https://user-images.githubusercontent.com/7802276/123485645-59faa380-d5bf-11eb-8e47-c98ea603471b.png">)
 
