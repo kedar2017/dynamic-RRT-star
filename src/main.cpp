@@ -3,7 +3,7 @@
 #include "fstream"
 #include "string"
 #include <Space.h>
-#include <Display.h>
+#include <Render.h>
 
 //From Geometry. Need to modify 
 bool radialPosCheck(Position* checkPoint, Position* center, int* radius){
@@ -183,9 +183,7 @@ std::vector<Node*> generatePath(Tree* tree, Node* start, Node* end, int flag){
             cv::line(image,cv::Point((parent->pos->posX)*5,(parent->pos->posY)*5),cv::Point((parent->parent->pos->posX)*5,(parent->parent->pos->posY)*5),cv::Scalar(255, 255, 255),8,cv::LINE_8);
         }
         else{
-            cv::line(image,cv::Point((parent->pos->posX)*5,(parent->pos->posY)*5),cv::Point((parent->parent->pos->posX)*5,(parent->parent->pos->posY)*5),cv::Scalar(255, 0, 255),3,cv::LINE_8);
-            //std::cout<<parent->getPos()->posX<<std::endl;
-            //std::cout<<parent->getPos()->posY<<std::endl;
+            cv::line(image,cv::Point((parent->pos->posX)*5,(parent->pos->posY)*5),cv::Point((parent->parent->pos->posX)*5,(parent->parent->pos->posY)*5),cv::Scalar(255, 0, 255),4,cv::LINE_8);
         }
         pathToGoal.push_back(parent);
         parent = parent->parent;
@@ -220,57 +218,85 @@ void run(Space* space, Tree* tree, Node* root, Node* goalNode, int threshold, No
     }
 }
 
+Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*> pathtoGoal,int startPathPos, int goalPathPos, int obsPathPos){
+    std::vector<int> startNew{int(pathtoGoal[startPathPos]->getPos()->posX),int(pathtoGoal[startPathPos]->getPos()->posY)};
+    std::vector<int> goalNew{int(pathtoGoal[goalPathPos]->getPos()->posX),int(pathtoGoal[goalPathPos]->getPos()->posY)};
+    int winXNew = std::max(startNew[0],goalNew[0])+deltaWinX;
+    int winYNew = std::max(startNew[1],goalNew[1])+deltaWinY;
+    int startX = std::min(startNew[0],goalNew[0])-deltaWinX;
+    int startY = std::min(startNew[1],goalNew[1])-deltaWinY;
+    std::vector<std::vector<int>> obstaclesNew{{15,60,60},{15,17,40},{20,50,80},{30,80,40},{2,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)}};
+    std::vector<int> dynObstacles{2,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)};
+    Space* spaceNew = new Space(startX, startY, winXNew, winYNew, startNew, goalNew, obstaclesNew, dynObstacles);
+    Position* posNew = new Position(spaceNew->start[0],spaceNew->start[1]);
+    Node* goalNodeNew = new Node(new Position(spaceNew->goal[0],spaceNew->goal[1]));
+    Node* rootNew = new Node(posNew);
+    Tree* treeNew = new Tree(rootNew);
+    Node* minStartNode;
+    run(spaceNew, treeNew, rootNew, goalNodeNew,3,minStartNode);
+    spaceNew->tree = treeNew;
+    printTree(treeNew,2);
+    spaceNew->plan = generatePath(treeNew,rootNew,goalNodeNew,2);
+
+    cv::Scalar colorCircle2(0,100,0);
+    cv::circle(image,cv::Point(5*spaceNew->obstacles[4]->center->posX,5*spaceNew->obstacles[4]->center->posY), 7, colorCircle2, cv::FILLED);
+    return spaceNew;
+}
+
 int main() {
     std::cout << "Hello, World!" << std::endl;
-    //cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
 
+    //Original RRT for finding path 
+    //****************************//
     int winX = 100;
     int winY = 100;
     std::vector<int> start{70,10};
     std::vector<int> goal{10,70};
     std::vector<std::vector<int>> obstacles{{15,60,60},{15,17,40},{20,50,80},{30,80,40}};
-    Space* space = new Space(0,0,winX, winY, start, goal, obstacles);
+    std::vector<int> dynObstacles{0,0,1};
+    Space* space = new Space(0,0,winX, winY, start, goal, obstacles,dynObstacles);
     Position* pos = new Position(space->start[0],space->start[1]);
     Node* goalNode = new Node(new Position(space->goal[0],space->goal[1]));
     Node* root = new Node(pos);
     Tree* tree = new Tree(root);
-
     Node* minStartNode;
     run(space, tree, root, goalNode, threshold, minStartNode);
+    space->tree = tree;
     printTree(tree,1);
+    space->plan = generatePath(tree,root,goalNode,1);
+    //****************************//
 
-    std::vector<Node*> pathtoGoal=generatePath(tree,root,goalNode,1);
+    //Code handling dynamic obstacles
+    //****************************//
 
-    //Code to handle the movement of the robot in delta steps 
-    //Space* space = new Space(winX, winY, start, goal, obstacles);
-    
-    int deltaWinX = 10;
-    int deltaWinY = 10;
-    std::vector<int> startNew{int(pathtoGoal[30]->getPos()->posX),int(pathtoGoal[30]->getPos()->posY)};
-    std::vector<int> goalNew{int(pathtoGoal[20]->getPos()->posX),int(pathtoGoal[20]->getPos()->posY)};
-    int winXNew = std::max(startNew[0],goalNew[0])+deltaWinX;
-    int winYNew = std::max(startNew[1],goalNew[1])+deltaWinY;
-    int startX = std::min(startNew[0],goalNew[0])-deltaWinX;
-    int startY = std::min(startNew[1],goalNew[1])-deltaWinY;
-    std::vector<std::vector<int>> obstaclesNew{{15,60,60},{15,17,40},{20,50,80},{30,80,40},{3,int(pathtoGoal[25]->getPos()->posX),int(pathtoGoal[25]->getPos()->posY)}};
-    Space* spaceNew = new Space(startX, startY, winXNew, winYNew, startNew, goalNew, obstaclesNew);
-    Position* posNew = new Position(spaceNew->start[0],spaceNew->start[1]);
-    Node* goalNodeNew = new Node(new Position(spaceNew->goal[0],spaceNew->goal[1]));
-    Node* rootNew = new Node(posNew);
-    Tree* treeNew = new Tree(rootNew);
-    run(spaceNew, treeNew, rootNew, goalNodeNew,3,minStartNode);
-    printTree(treeNew,2);
+    Space* forObsOne = RRTStar(10,10,space->plan,30,24,27);
+    Space* forObsTwo = RRTStar(10,10,space->plan,23,17,20);
+    Space* forObsThree = RRTStar(10,10,space->plan,16,10,13);
 
-    std::vector<Node*> pathtoGoalNew=generatePath(treeNew,rootNew,goalNodeNew,2);
+    //****************************//
 
     int radiusCircle = 30;
     cv::Scalar colorCircle2(0,100,0);
     cv::circle(image,cv::Point(5*start[0],5*start[1]), radiusCircle, colorCircle2, cv::FILLED);
     cv::circle(image,cv::Point(5*goal[0],5*goal[1]), radiusCircle, colorCircle2, cv::FILLED);
-
-    cv::circle(image,cv::Point(5*spaceNew->obstacles[4]->center->posX,5*spaceNew->obstacles[4]->center->posY), 7, colorCircle2, cv::FILLED);
-
     cv::imshow( "Display window", image );
     cv::waitKey(0);
+
+    Render* test = new Render(space);
+    test->setFlag(1);
+    test->run();
+
+    Render* forObsOneTest = new Render(forObsOne);
+    forObsOneTest->setFlag(2);
+    forObsOneTest->run();
+
+    Render* forObsTwoTest = new Render(forObsTwo);
+    forObsTwoTest->setFlag(2);
+    forObsTwoTest->run();
+
+    Render* forObsThreeTest = new Render(forObsThree);
+    forObsThreeTest->setFlag(2);
+    forObsThreeTest->run();
+
     return 0;
 }

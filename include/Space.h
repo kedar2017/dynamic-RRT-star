@@ -13,8 +13,11 @@ public:
     std::vector<int> goal;
     std::vector<std::vector<int> > points;
     std::vector<Obstacle*> obstacles;
+    std::vector<Obstacle*> dynObstacle;
+    Tree* tree;
+    std::vector<Node*> plan;
 
-    Space(int startX,int startY,int x, int y, std::vector<int> start, std::vector<int> goal, std::vector<std::vector<int>> obst){
+    Space(int startX,int startY,int x, int y, std::vector<int> start, std::vector<int> goal, std::vector<std::vector<int>> obst,std::vector<int> dynObstacle){
         this->winX = x;
         this->winY = y;
         this->start = start;
@@ -26,6 +29,7 @@ public:
             }
         }
         initObstacles(obst);
+        initDynamicObstacles(dynObstacle);
         return;
     }
 
@@ -35,6 +39,14 @@ public:
             Obstacle* obstacleNew = new Obstacle(centerPos,tuples[i][0]);
             this->obstacles.push_back(obstacleNew);
         }
+        return;
+    }
+
+    void initDynamicObstacles(std::vector<int> dynObs){
+
+        Position* centerPos = new Position(dynObs[1],dynObs[2]);
+        Obstacle* obstacleNew = new Obstacle(centerPos,dynObs[0]);
+        this->dynObstacle.push_back(obstacleNew);
         return;
     }
 
