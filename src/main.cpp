@@ -219,7 +219,7 @@ void run(Space* space, Tree* tree, Node* root, Node* goalNode, int threshold, No
     }
 }
 
-Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*> pathtoGoal,int startPathPos, int goalPathPos, int obsPathPos){
+Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int startPathPos, int goalPathPos, int obsPathPos){
     std::vector<int> startNew{int(pathtoGoal[startPathPos]->getPos()->posX),int(pathtoGoal[startPathPos]->getPos()->posY)};
     std::vector<int> goalNew{int(pathtoGoal[goalPathPos]->getPos()->posX),int(pathtoGoal[goalPathPos]->getPos()->posY)};
     int winXNew = std::max(startNew[0],goalNew[0])+deltaWinX;
@@ -228,6 +228,7 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*> pathtoGoal,int s
     int startY = std::min(startNew[1],goalNew[1])-deltaWinY;
     std::vector<std::vector<int>> obstaclesNew{{20,60,60},{20,17,40},{20,50,80},{20,80,40},{3,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)}};
     std::vector<int> dynObstacles{3,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)};
+
     Space* spaceNew = new Space(startX, startY, winXNew, winYNew, startNew, goalNew, obstaclesNew, dynObstacles);
     Position* posNew = new Position(spaceNew->start[0],spaceNew->start[1]);
     Node* goalNodeNew = new Node(new Position(spaceNew->goal[0],spaceNew->goal[1]));
@@ -238,6 +239,9 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*> pathtoGoal,int s
     spaceNew->tree = treeNew;
     printTree(treeNew,2);
     spaceNew->plan = generatePath(treeNew,rootNew,goalNodeNew,2);
+
+    pathtoGoal.erase(std::next(pathtoGoal.begin(), goalPathPos+1), std::next(pathtoGoal.begin(), pathtoGoal.size()));
+    pathtoGoal.insert(std::end(pathtoGoal), std::begin(spaceNew->plan), std::end(spaceNew->plan));
 
     cv::Scalar colorCircle2(0,100,0);
     cv::circle(image,cv::Point(5*spaceNew->obstacles[4]->center->posX,5*spaceNew->obstacles[4]->center->posY), 7, colorCircle2, cv::FILLED);
