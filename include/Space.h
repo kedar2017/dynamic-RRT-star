@@ -50,6 +50,11 @@ public:
         return;
     }
 
+    void addDynamicObstacle(Obstacle* obs){
+        this->obstacles.push_back(obs);
+        return;
+    }
+
     std::vector<int> getRandomPoint(){
         std::random_device randomDevice;
         std::mt19937  engine{randomDevice()};
@@ -77,4 +82,20 @@ public:
         }
         return;
     }
+};
+
+class Universe{
+    public:
+
+    std::vector<Space*> allSpaces;
+
+    Universe(){
+        return;
+    }
+
+    void addSpace(Space* space){
+        allSpaces.push_back(space);
+        return;
+    }
+
 };

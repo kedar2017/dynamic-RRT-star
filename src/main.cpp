@@ -188,6 +188,7 @@ std::vector<Node*> generatePath(Tree* tree, Node* start, Node* end, int flag){
         pathToGoal.push_back(parent);
         parent = parent->parent;
     }
+    pathToGoal.push_back(parent);
     return pathToGoal;
 }
 
@@ -225,8 +226,8 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*> pathtoGoal,int s
     int winYNew = std::max(startNew[1],goalNew[1])+deltaWinY;
     int startX = std::min(startNew[0],goalNew[0])-deltaWinX;
     int startY = std::min(startNew[1],goalNew[1])-deltaWinY;
-    std::vector<std::vector<int>> obstaclesNew{{15,60,60},{15,17,40},{20,50,80},{30,80,40},{2,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)}};
-    std::vector<int> dynObstacles{2,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)};
+    std::vector<std::vector<int>> obstaclesNew{{20,60,60},{20,17,40},{20,50,80},{20,80,40},{3,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)}};
+    std::vector<int> dynObstacles{3,int(pathtoGoal[obsPathPos]->getPos()->posX),int(pathtoGoal[obsPathPos]->getPos()->posY)};
     Space* spaceNew = new Space(startX, startY, winXNew, winYNew, startNew, goalNew, obstaclesNew, dynObstacles);
     Position* posNew = new Position(spaceNew->start[0],spaceNew->start[1]);
     Node* goalNodeNew = new Node(new Position(spaceNew->goal[0],spaceNew->goal[1]));
@@ -243,6 +244,16 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*> pathtoGoal,int s
     return spaceNew;
 }
 
+void testRePlan(Space* space, Tree* tree, std::vector<Node*> pathToGoal,int startPathPos,int goalPathPos, int obsPathPos){
+    //Add obstacle
+    Obstacle* dynObs = new Obstacle(new Position(pathToGoal[obsPathPos]->getPos()->posX,pathToGoal[obsPathPos]->getPos()->posY), 7);
+    space->addDynamicObstacle(dynObs);
+    //Run RRT again
+    reWire(space,tree,pathToGoal[startPathPos]);
+    run(space,tree,pathToGoal[startPathPos],pathToGoal[goalPathPos],3,new Node(new Position(0,0)));
+    return;
+}
+
 int main() {
     std::cout << "Hello, World!" << std::endl;
 
@@ -252,9 +263,11 @@ int main() {
     int winY = 100;
     std::vector<int> start{70,10};
     std::vector<int> goal{10,70};
-    std::vector<std::vector<int>> obstacles{{15,60,60},{15,17,40},{20,50,80},{30,80,40}};
+    std::vector<std::vector<int>> obstacles{{20,60,60},{20,17,40},{20,50,80},{30,80,40}};
     std::vector<int> dynObstacles{0,0,1};
     Space* space = new Space(0,0,winX, winY, start, goal, obstacles,dynObstacles);
+    Universe* universe = new Universe();
+    universe->addSpace(space);
     Position* pos = new Position(space->start[0],space->start[1]);
     Node* goalNode = new Node(new Position(space->goal[0],space->goal[1]));
     Node* root = new Node(pos);
@@ -265,27 +278,35 @@ int main() {
     printTree(tree,1);
     space->plan = generatePath(tree,root,goalNode,1);
     //****************************//
+    //****************************//
+    //****************************//
+
+    Render* test = new Render(space,universe);
+    test->setFlag(1);
+    test->run();
 
     //Code handling dynamic obstacles
     //****************************//
 
-    Space* forObsOne = RRTStar(10,10,space->plan,30,24,27);
-    Space* forObsTwo = RRTStar(10,10,space->plan,23,17,20);
-    Space* forObsThree = RRTStar(10,10,space->plan,16,10,13);
-
-    //****************************//
-
-    int radiusCircle = 30;
-    cv::Scalar colorCircle2(0,100,0);
-    cv::circle(image,cv::Point(5*start[0],5*start[1]), radiusCircle, colorCircle2, cv::FILLED);
-    cv::circle(image,cv::Point(5*goal[0],5*goal[1]), radiusCircle, colorCircle2, cv::FILLED);
-    cv::imshow( "Display window", image );
-    cv::waitKey(0);
-
-    Render* test = new Render(space);
+    Space* forObsOne = RRTStar(20,20,space->plan,30,24,27);
+    universe->addSpace(forObsOne);
     test->setFlag(1);
     test->run();
 
+    Space* forObsTwo = RRTStar(20,20,space->plan,23,17,20);
+    universe->addSpace(forObsTwo);
+    test->setFlag(1);
+    test->run();
+
+    Space* forObsThree = RRTStar(20,20,space->plan,16,10,13);
+    universe->addSpace(forObsThree);
+    test->setFlag(1);
+    test->run();
+
+    //testRePlan(space,tree,space->plan,30,24,27);
+
+    //****************************//
+/*
     Render* forObsOneTest = new Render(forObsOne);
     forObsOneTest->setFlag(2);
     forObsOneTest->run();
@@ -297,6 +318,6 @@ int main() {
     Render* forObsThreeTest = new Render(forObsThree);
     forObsThreeTest->setFlag(2);
     forObsThreeTest->run();
-
+*/
     return 0;
 }

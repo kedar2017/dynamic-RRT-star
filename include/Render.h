@@ -15,6 +15,7 @@ private:
     int refresh_rate;               // viewer refresh rate in ms
 
     Space* bigSpace;
+    Universe* bigUniverse;
     int flag = 0;
 
     double map_width, map_height;
@@ -25,7 +26,7 @@ private:
 
 public:
     // ctor for viewer
-    Render(Space* bigSpace);
+    Render(Space* bigSpace, Universe* bigUniverse);
 
     // main function to display env - Bind to another thread
     void run();
@@ -34,8 +35,8 @@ public:
     void setFlag(int statVsDyn);
     void DrawObstacle(vector<double>& features, cv::Mat& scene);
     void DrawRobot(cv::Mat& scene);
-    void DrawGoal(cv::Mat& scene);
-    void DrawStart(cv::Mat& scene);
+    void DrawGoal(Space* space,cv::Mat& scene);
+    void DrawStart(Space* space,cv::Mat& scene);
     void DrawTree(cv::Mat& scene);
     void DrawPlan(const vector<Node*>& plan, cv::Mat& scene);
 
@@ -44,8 +45,8 @@ public:
     bool isViewerClosed();
 };
 
-Render::Render(Space* ptrSpace)
-    : bigSpace(ptrSpace), closeViewer(false), refresh_rate(10)
+Render::Render(Space* ptrSpace, Universe* ptrUni)
+    : bigSpace(ptrSpace), closeViewer(false), refresh_rate(10), bigUniverse(ptrUni)
 {
     std::cout<<"Initialized renderer..."<<std::endl;
 }
@@ -58,23 +59,23 @@ void Render::setFlag(int statVsDyn){
 void Render::DrawObstacle(vector<double>& features, cv::Mat& scene){
     cv::Scalar colorCircle2(0,100,0);
     if(features.size() == 3)
-        cv::circle(scene,cv::Point(features[1],features[2]),features[0] , colorCircle2 , cv::FILLED);
+        cv::circle(scene,cv::Point(features[1],features[2]),5*features[0] , colorCircle2 , cv::FILLED);
     else
         cout << "ERROR: Something is wrong. Obst has "<< features.size() << " features" << endl;
 }
 
-void Render::DrawGoal(cv::Mat& scene){
+void Render::DrawGoal(Space* space,cv::Mat& scene){
     int gx, gy;
-    gx = bigSpace->start[0];
-    gy = bigSpace->start[1];
+    gx = space->start[0];
+    gy = space->start[1];
     cv::circle(scene, cv::Point(5*gx, 5*gy), 7, cv::Scalar(0,255,0), cv::FILLED);
     return; 
 }
 
-void Render::DrawStart(cv::Mat& scene){
+void Render::DrawStart(Space* space,cv::Mat& scene){
     int gx, gy;
-    gx = bigSpace->goal[0];
-    gy = bigSpace->goal[1];
+    gx = space->goal[0];
+    gy = space->goal[1];
     cv::circle(scene, cv::Point(5*gx, 5*gy), 7, cv::Scalar(0,255,0), cv::FILLED);
     return;
 }
@@ -121,21 +122,29 @@ void Render::DrawRobot(cv::Mat& scene){
 void Render::run()
 {   
     cout << "Starting renderer .. " << endl;
-
-    // Set up white background with map size
     background = cv::Mat(500, 500, CV_8UC3, cv::Scalar(0,0,0));
-    
+
+    DrawTree(background);
     std::vector<Obstacle*> staticObs = bigSpace->obstacles;
-    // Draw static obstacles onto background
+    std::cout<<staticObs.size()<<std::endl;
     for(Obstacle* curr: staticObs){
         vector<double> features = {curr->radius,5*curr->center->posX,5*curr->center->posY};
         DrawObstacle(features, background);
     }
 
-    DrawGoal(background);
-    DrawStart(background);
-    DrawTree(background);
+    std::vector<Obstacle*> dynObs = bigUniverse->allSpaces.back()->dynObstacle;
+    std::cout<<dynObs.size()<<std::endl;
+    for(Obstacle* curr: dynObs){
+        vector<double> features = {curr->radius,5*curr->center->posX,5*curr->center->posY};
+        DrawObstacle(features, background);
+    }
+
+    DrawGoal(bigSpace,background);
+    DrawStart(bigSpace,background);
+    DrawGoal(bigUniverse->allSpaces.back(),background);
+    DrawStart(bigUniverse->allSpaces.back(),background);
     DrawPlan(bigSpace->plan, background);
+    DrawPlan(bigUniverse->allSpaces.back()->plan, background);
 
     cv::imshow("Environment display", background);
     cv::waitKey(0);
