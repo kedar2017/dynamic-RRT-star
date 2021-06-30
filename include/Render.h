@@ -3,6 +3,7 @@
 #include <iostream>
 #include <mutex>
 #include </usr/local/Cellar/opencv/4.5.2_4/include/opencv4/opencv2/opencv.hpp>
+#include <Space.h>
 
 cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
 

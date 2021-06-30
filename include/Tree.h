@@ -1,4 +1,4 @@
-
+#pragma once
 #include "vector"
 #include "math.h"
 #include "random"
@@ -63,7 +63,6 @@ public:
         this->children.push_back(child);
     }
 };
-
 
 class Obstacle{
 public:

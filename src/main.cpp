@@ -2,8 +2,8 @@
 #include <iostream>
 #include "fstream"
 #include "string"
-#include <Space.h>
-#include <Render.h>
+#include "Render.h"
+#include "World.h"
 
 //From Geometry. Need to modify 
 bool radialPosCheck(Position* checkPoint, Position* center, int* radius){
@@ -248,16 +248,29 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int 
     return spaceNew;
 }
 
-void testRePlan(Space* space, Tree* tree, std::vector<Node*> pathToGoal,int startPathPos,int goalPathPos, int obsPathPos){
-    //Add obstacle
-    Obstacle* dynObs = new Obstacle(new Position(pathToGoal[obsPathPos]->getPos()->posX,pathToGoal[obsPathPos]->getPos()->posY), 7);
-    space->addDynamicObstacle(dynObs);
-    //Run RRT again
-    reWire(space,tree,pathToGoal[startPathPos]);
-    run(space,tree,pathToGoal[startPathPos],pathToGoal[goalPathPos],3,new Node(new Position(0,0)));
-    return;
-}
+void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot* robot){
 
+    if(pathtoGoal.size()==0){
+        std::cout<<"Error! No plan generated"<<std::endl;
+        return;
+    }
+    
+    pathtoGoal.pop_back();
+    if(robot->nextDestination==NULL){
+        robot->nextDestination = pathtoGoal.back();
+    }
+
+    double timeGlobal = 1;
+    double robVelo = robot->getVel();
+    double distLocalDest = robVelo*timeGlobal;
+
+    while(!robot->robotAtGoal()){
+        if(!robot->robotAtDestination()) continue;
+
+        
+    }
+
+}
 int main() {
     std::cout << "Hello, World!" << std::endl;
 
@@ -281,17 +294,24 @@ int main() {
     space->tree = tree;
     printTree(tree,1);
     space->plan = generatePath(tree,root,goalNode,1);
-    //****************************//
-    //****************************//
-    //****************************//
 
+    //Define robot
+    //****************************//
+    Robot* robot = new Robot();
+    robot->setRobotNode(root);
+    World* world = new World(robot,10);
+    robot->setWorld(world);
+    //****************************//
+    //****************************//
+    /*
     Render* test = new Render(space,universe);
     test->setFlag(1);
     test->run();
-
+    */
     //Code handling dynamic obstacles
     //****************************//
 
+    /*
     Space* forObsOne = RRTStar(20,20,space->plan,30,24,27);
     universe->addSpace(forObsOne);
     test->setFlag(1);
@@ -307,21 +327,6 @@ int main() {
     test->setFlag(1);
     test->run();
 
-    //testRePlan(space,tree,space->plan,30,24,27);
-
-    //****************************//
-/*
-    Render* forObsOneTest = new Render(forObsOne);
-    forObsOneTest->setFlag(2);
-    forObsOneTest->run();
-
-    Render* forObsTwoTest = new Render(forObsTwo);
-    forObsTwoTest->setFlag(2);
-    forObsTwoTest->run();
-
-    Render* forObsThreeTest = new Render(forObsThree);
-    forObsThreeTest->setFlag(2);
-    forObsThreeTest->run();
-*/
+    */
     return 0;
 }
