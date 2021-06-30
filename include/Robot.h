@@ -35,7 +35,7 @@ public:
     // Getters
     bool getGoal(double& gx, double& gy);
     void getRobotPose(double &rx, double &ry);
-    Node* getDestination();
+    bool getDestination(Node*& dest);
     double getVel();
     std::vector<Node*> getCurrentTree();
     std::vector<Node*> getLocalTree();
@@ -46,6 +46,7 @@ public:
     // Setters
     void setWorld(World* world);                            // main links robot to world
     void setRobotNode(Node* node);    // world updates robot pose
+    void setRobotPose(double x, double y);
     void setDestination(Node* dest);                        // planner should update destination
 
     bool robotAtGoal();
@@ -82,13 +83,13 @@ void Robot::getRobotPose(double &rx, double &ry){
     ry = y;
 }
 
-Node* Robot::getDestination(){
+bool Robot::getDestination(Node*& dest){
     std::unique_lock<std::mutex> DestLock(destMtx);
     if(nextDestination == NULL){
-        // cout << "WARN: Next destination is queried but found to be NULL. Maybe still planning..?" << endl;
-        return NULL;
+        return false;
     }
-    return  nextDestination;
+    dest = nextDestination;
+    return true;
 }
 
 double Robot::getVel() {return vel;}
@@ -100,6 +101,13 @@ void Robot::setWorld(World* world){
 void Robot::setRobotNode(Node* node){
     std::unique_lock<std::mutex> poseLock(this->poseMtx);
     this->currNode = node;
+    return;
+}
+
+void Robot::setRobotPose(double xPos, double yPos){
+    std::unique_lock<std::mutex> poseLock(this->poseMtx);
+    this->x = xPos;
+    this->y = yPos;
     return;
 }
 

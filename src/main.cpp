@@ -254,23 +254,37 @@ void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot*
         std::cout<<"Error! No plan generated"<<std::endl;
         return;
     }
-    
+    int currStep = pathtoGoal.size()-1;
     pathtoGoal.pop_back();
     if(robot->nextDestination==NULL){
         robot->nextDestination = pathtoGoal.back();
     }
-
     double timeGlobal = 1;
     double robVelo = robot->getVel();
     double distLocalDest = robVelo*timeGlobal;
-
+    return;
     while(!robot->robotAtGoal()){
         if(!robot->robotAtDestination()) continue;
-
-        
+        robot->currNode = robot->nextDestination;
+        unsigned long int currTime = robot->world->get_system_time();
+        double distTrav = 0;
+        bool obsBlock = false;
+        int currIndx = currStep;
+        bool firstEdge = true;
+        Node* replanGoal = NULL;
+        Node* replanStart= pathtoGoal[currStep];
+        while(distTrav < distLocalDest){
+            replanGoal = pathtoGoal[currIndx];
+            int nextIndx = currIndx-1;
+            distTrav += sqrt(pow(pathtoGoal[currIndx]->getPos()->posX-pathtoGoal[nextIndx]->getPos()->posX,2)+pow(pathtoGoal[currIndx]->getPos()->posY-pathtoGoal[nextIndx]->getPos()->posY,2));
+            currIndx = nextIndx;
+            pathtoGoal.pop_back();
+        }
+        robot->setDestination(pathtoGoal[currStep-1]);
     }
-
+    return;
 }
+
 int main() {
     std::cout << "Hello, World!" << std::endl;
 
@@ -295,12 +309,19 @@ int main() {
     printTree(tree,1);
     space->plan = generatePath(tree,root,goalNode,1);
 
-    //Define robot
-    //****************************//
     Robot* robot = new Robot();
     robot->setRobotNode(root);
+    robot->pathtoGoal = space->plan;
     World* world = new World(robot,10);
     robot->setWorld(world);
+
+    std::thread worldUpdateThread(&World::update, world);
+    executePath(space,tree,robot->pathtoGoal,robot);
+    worldUpdateThread.join();
+    return 0;
+}
+
+
     //****************************//
     //****************************//
     /*
@@ -328,5 +349,3 @@ int main() {
     test->run();
 
     */
-    return 0;
-}
