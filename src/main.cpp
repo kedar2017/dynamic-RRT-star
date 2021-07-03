@@ -165,10 +165,12 @@ void printTree(Tree* tree,int flag){
         Node* currN = stack.front();
         stack.erase(stack.begin());
         for (Node* child:currN->children) {
+            /*
             if(flag==1)
                 cv::line(image,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(255, 0, 0),2,cv::LINE_8);
             else
                 cv::line(image,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(0, 0, 255),2,cv::LINE_8);
+            */
             stack.insert(stack.begin(),child);
         }
     }
@@ -179,12 +181,14 @@ std::vector<Node*> generatePath(Tree* tree, Node* start, Node* end, int flag){
     parent = end;
     std::vector<Node*> pathToGoal;
     while (parent != start){
+        /*
         if(flag ==1){
             cv::line(image,cv::Point((parent->pos->posX)*5,(parent->pos->posY)*5),cv::Point((parent->parent->pos->posX)*5,(parent->parent->pos->posY)*5),cv::Scalar(255, 255, 255),8,cv::LINE_8);
         }
         else{
             cv::line(image,cv::Point((parent->pos->posX)*5,(parent->pos->posY)*5),cv::Point((parent->parent->pos->posX)*5,(parent->parent->pos->posY)*5),cv::Scalar(255, 0, 255),4,cv::LINE_8);
         }
+        */
         pathToGoal.push_back(parent);
         parent = parent->parent;
     }
@@ -196,7 +200,7 @@ void run(Space* space, Tree* tree, Node* root, Node* goalNode, int threshold, No
     space->removeNodeFreeSpace(root);
     int iterations = 0;
 
-    cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
+    //cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
 
 
     while (checkGoaltoTree(tree,goalNode,&threshold)){
@@ -242,13 +246,10 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int 
 
     pathtoGoal.erase(std::next(pathtoGoal.begin(), goalPathPos+1), std::next(pathtoGoal.begin(), pathtoGoal.size()));
     pathtoGoal.insert(std::end(pathtoGoal), std::begin(spaceNew->plan), std::end(spaceNew->plan));
-
-    cv::Scalar colorCircle2(0,100,0);
-    cv::circle(image,cv::Point(5*spaceNew->obstacles[4]->center->posX,5*spaceNew->obstacles[4]->center->posY), 7, colorCircle2, cv::FILLED);
     return spaceNew;
 }
 
-void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot* robot){
+void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot* robot,Render* render){
 
     if(pathtoGoal.size()==0){
         std::cout<<"Error! No plan generated"<<std::endl;
@@ -259,10 +260,9 @@ void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot*
     if(robot->nextDestination==NULL){
         robot->nextDestination = pathtoGoal.back();
     }
-    double timeGlobal = 1;
+    double timeGlobal = 10;
     double robVelo = robot->getVel();
     double distLocalDest = robVelo*timeGlobal;
-    return;
     while(!robot->robotAtGoal()){
         if(!robot->robotAtDestination()) continue;
         robot->currNode = robot->nextDestination;
@@ -270,17 +270,26 @@ void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot*
         double distTrav = 0;
         bool obsBlock = false;
         int currIndx = currStep;
+        int nextIndx = currIndx;
         bool firstEdge = true;
         Node* replanGoal = NULL;
         Node* replanStart= pathtoGoal[currStep];
-        while(distTrav < distLocalDest){
+        while(distTrav < distLocalDest && currIndx>0){
             replanGoal = pathtoGoal[currIndx];
-            int nextIndx = currIndx-1;
+            nextIndx = currIndx-1;
             distTrav += sqrt(pow(pathtoGoal[currIndx]->getPos()->posX-pathtoGoal[nextIndx]->getPos()->posX,2)+pow(pathtoGoal[currIndx]->getPos()->posY-pathtoGoal[nextIndx]->getPos()->posY,2));
             currIndx = nextIndx;
-            pathtoGoal.pop_back();
+            //pathtoGoal.pop_back();
         }
+        currStep = currStep-1;
         robot->setDestination(pathtoGoal[currStep-1]);
+
+        std::cout<<"HERE"<<std::endl;
+        std::cout<<currStep<<std::endl;
+        std::cout<<currIndx<<std::endl;
+        std::cout<<nextIndx<<std::endl;
+        cv::imshow("Environment display", render->getBackground());
+        cv::waitKey(10);
     }
     return;
 }
@@ -306,18 +315,25 @@ int main() {
     Node* minStartNode;
     run(space, tree, root, goalNode, threshold, minStartNode);
     space->tree = tree;
-    printTree(tree,1);
     space->plan = generatePath(tree,root,goalNode,1);
 
-    Robot* robot = new Robot();
+    Robot* robot = new Robot(70,10,1,10,70);
     robot->setRobotNode(root);
     robot->pathtoGoal = space->plan;
-    World* world = new World(robot,10);
+    robot->currNode = robot->pathtoGoal.back();
+    World* world = new World(robot,1000);
     robot->setWorld(world);
 
+    cv::Mat background = cv::Mat(500, 500, CV_8UC3, cv::Scalar(0,0,0));
+
+    Render* render = new Render(space,universe,world,robot,background);
+    render->setFlag(1);
+
+    std::thread renderThread(&Render::run,render);
     std::thread worldUpdateThread(&World::update, world);
-    executePath(space,tree,robot->pathtoGoal,robot);
+    executePath(space,tree,robot->pathtoGoal,robot,render);
     worldUpdateThread.join();
+    renderThread.join();
     return 0;
 }
 

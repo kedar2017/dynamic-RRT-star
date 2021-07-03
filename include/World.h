@@ -42,30 +42,28 @@ void World::updateTime(){
 }
 
 void World::update(){
-    double new_robot_x, new_robot_y;
+    double newRobotX, newRobotY;
+    double robotX, robotY;
+    double destX, destY;
     double robotVel = robot->getVel();
-    std::cout<<"I am in world update"<<std::endl;
     while(get_system_time() < 1e20){
         updateTime();
-        Node* curr = robot->getRobotNode();
-        Node* dest;
-        std::cout<<curr->getPos()->posX<<std::endl;
-        std::cout<<curr->getPos()->posY<<std::endl;
-        if(!robot->robotAtDestination() && robot->getDestination(dest)) // if destination exists
+        robot->getRobotPose(robotX,robotY);
+        if((robotX != destX || robotY != destY) && robot->getDestination(destX,destY)) // if destination exists
         {
-            std::cout<<"I am inside the update loop"<<std::endl;
             double vdt = robotVel*updateRatems/1000;
-            double dist = sqrt(pow(dest->getPos()->posX - curr->getPos()->posY, 2) + pow(dest->getPos()->posY - curr->getPos()->posY, 2));
+            double dist = sqrt(pow(destX - robotX, 2) + pow(destY - robotY, 2));
+
             if(dist < vdt)
             {
-                new_robot_x = dest->getPos()->posX;
-                new_robot_y = dest->getPos()->posY;
+                newRobotX = destX;
+                newRobotY = destY;
             }
             else{
-                new_robot_x = curr->getPos()->posX + vdt*(dest->getPos()->posX - curr->getPos()->posX)/dist;
-                new_robot_y = curr->getPos()->posY + vdt*(dest->getPos()->posY - curr->getPos()->posY)/dist;
+                newRobotX = robotX + vdt*(destX-robotX)/dist;
+                newRobotY = robotY + vdt*(destY-robotY)/dist;
             }
-            robot->setRobotPose(new_robot_x, new_robot_y);
+            robot->setRobotPose(newRobotX,newRobotY);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(updateRatems)); // sleep
     }

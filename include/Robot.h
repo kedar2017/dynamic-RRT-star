@@ -13,8 +13,9 @@ public:
     double x, y;            // in m
     const double vel;       // in m/s
     Node* nextDestination; // goal buffer
-    Node* goalNode;             // goal node
+    double gx, gy;
     Node* currNode;       // current node at which robot is present
+    Node* goalNode;
     Node* localGoal;       // replanner goal
 
     double E;
@@ -35,7 +36,7 @@ public:
     // Getters
     bool getGoal(double& gx, double& gy);
     void getRobotPose(double &rx, double &ry);
-    bool getDestination(Node*& dest);
+    bool getDestination(double &rx, double &ry);
     double getVel();
     std::vector<Node*> getCurrentTree();
     std::vector<Node*> getLocalTree();
@@ -63,32 +64,36 @@ Robot::Robot(double x, double y, double vel, double x_goal, double y_goal)
     : x(x), y(y), vel(vel), nextDestination(NULL), world(NULL), E(0.5),
       currNode(NULL), localGoal(NULL)
     {
-        goalNode = new Node(new Position(x_goal, y_goal));
-        currNode = pathtoGoal.back();
+        this->x = x;
+        this->y = y;
+        this->gx = x_goal;
+        this->gy = y_goal;
+        this->goalNode = new Node(new Position(this->gx,this->gy));
     }
 
 bool Robot::getGoal(double& gx, double & gy){
-    if(goalNode == NULL){
+    if(this->goalNode == NULL){
         std::cout << "ERR: Goal is empty. Could not get goal" << std::endl;
         return false;
     } 
-    gx = goalNode->getPos()->posX;
-    gy = goalNode->getPos()->posY;
+    this->gx = this->goalNode->getPos()->posX;
+    this->gy = goalNode->getPos()->posY;
     return true;
 }
 
 void Robot::getRobotPose(double &rx, double &ry){
     std::unique_lock<std::mutex> poseLock(poseMtx);
-    rx = x;
-    ry = y;
+    rx = this->x;
+    ry = this->y;
 }
 
-bool Robot::getDestination(Node*& dest){
+bool Robot::getDestination(double &rx, double &ry){
     std::unique_lock<std::mutex> DestLock(destMtx);
-    if(nextDestination == NULL){
+    if(this->nextDestination == NULL){
         return false;
     }
-    dest = nextDestination;
+    rx = this->nextDestination->getPos()->posX;
+    ry = this->nextDestination->getPos()->posY;
     return true;
 }
 
@@ -118,20 +123,20 @@ void Robot::setDestination(Node* dest){
 
 bool Robot::robotAtGoal(){
     std::unique_lock<std::mutex> poseLock(poseMtx);
-    double radialPos = sqrt(pow(currNode->getPos()->posX - goalNode->getPos()->posX,2)+pow(currNode->getPos()->posY - goalNode->getPos()->posY,2));
-    if (radialPos < 3){
+    double radialPos = sqrt(pow(this->x - this->goalNode->getPos()->posX,2)+pow(this->y - this->goalNode->getPos()->posY,2));
+    if (radialPos < 6){
         return true;
     }
     return false;
 }
 
 bool Robot::robotAtDestination(){
-    if(nextDestination == NULL){
+    if(this->nextDestination == NULL){
         cout << "Something is off. Checking robot at destination before making a destination" << endl;
         return false;
     }
     std::unique_lock<std::mutex> poseLock(poseMtx);
-    double radialPos = sqrt(pow(currNode->getPos()->posX - nextDestination->getPos()->posX,2)+pow(currNode->getPos()->posY - nextDestination->getPos()->posY,2));
+    double radialPos = sqrt(pow(this->x - this->nextDestination->getPos()->posX,2)+pow(this->y - this->nextDestination->getPos()->posY,2));
     if (radialPos < 1){
         return true;
     }
@@ -139,12 +144,12 @@ bool Robot::robotAtDestination(){
 }
 
 vector<Node*> Robot::getLocalTree(){
-    return globalTree;
+    return this->globalTree;
 }
 
 vector<Node*> Robot::getPlan(){
-    return pathtoGoal;
+    return this->pathtoGoal;
 }
 
-Node* Robot::getRobotNode(){ return currNode; }
+Node* Robot::getRobotNode(){ return this->currNode;}
 Node* Robot::getReplanGoal(){ return localGoal; }
