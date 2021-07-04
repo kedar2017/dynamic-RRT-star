@@ -250,7 +250,6 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int 
 }
 
 void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot* robot,Render* render){
-
     if(pathtoGoal.size()==0){
         std::cout<<"Error! No plan generated"<<std::endl;
         return;
@@ -260,7 +259,8 @@ void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot*
     if(robot->nextDestination==NULL){
         robot->nextDestination = pathtoGoal.back();
     }
-    double timeGlobal = 10;
+    
+    double timeGlobal = 1;
     double robVelo = robot->getVel();
     double distLocalDest = robVelo*timeGlobal;
     while(!robot->robotAtGoal()){
@@ -274,20 +274,44 @@ void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot*
         bool firstEdge = true;
         Node* replanGoal = NULL;
         Node* replanStart= pathtoGoal[currStep];
+        Obstacle* currDynObs;
         while(distTrav < distLocalDest && currIndx>0){
             replanGoal = pathtoGoal[currIndx];
             nextIndx = currIndx-1;
             distTrav += sqrt(pow(pathtoGoal[currIndx]->getPos()->posX-pathtoGoal[nextIndx]->getPos()->posX,2)+pow(pathtoGoal[currIndx]->getPos()->posY-pathtoGoal[nextIndx]->getPos()->posY,2));
+            
+            for(Obstacle* dynObs: space->dynObstacle){
+
+                if(linePassesObstacle(dynObs,pathtoGoal[currIndx]->getPos(),pathtoGoal[nextIndx]->getPos())){
+                    obsBlock = true;
+                    currDynObs = dynObs;
+                }
+            }
+
+            if(obsBlock) break;
             currIndx = nextIndx;
             //pathtoGoal.pop_back();
         }
+
+        if(obsBlock){
+            //while(linePassesObstacle(currDynObs,pathtoGoal[currStep]->getPos(),pathtoGoal[currIndx]->getPos())){
+            std::cout<<currIndx<<std::endl;
+            while(insidePolygon(currDynObs,pathtoGoal[currIndx]->getPos())){
+                replanGoal = pathtoGoal[currIndx];
+                currIndx = currIndx-1;
+                std::cout<<"Wow I found a replan location goal"<<std::endl;
+            }
+            std::cout<<currIndx<<std::endl;
+            //RRTStar(20,20,space->plan,currStep,currIndx);
+        }
         currStep = currStep-1;
         robot->setDestination(pathtoGoal[currStep-1]);
-
+        /*
         std::cout<<"HERE"<<std::endl;
         std::cout<<currStep<<std::endl;
         std::cout<<currIndx<<std::endl;
         std::cout<<nextIndx<<std::endl;
+        */
         cv::imshow("Environment display", render->getBackground());
         cv::waitKey(10);
     }
@@ -317,11 +341,13 @@ int main() {
     space->tree = tree;
     space->plan = generatePath(tree,root,goalNode,1);
 
+    space->addDynamicObstacle(new Obstacle(space->plan[27]->getPos(),3));
+
     Robot* robot = new Robot(70,10,1,10,70);
     robot->setRobotNode(root);
     robot->pathtoGoal = space->plan;
     robot->currNode = robot->pathtoGoal.back();
-    World* world = new World(robot,1000);
+    World* world = new World(robot,10000);
     robot->setWorld(world);
 
     cv::Mat background = cv::Mat(500, 500, CV_8UC3, cv::Scalar(0,0,0));

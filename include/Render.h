@@ -139,7 +139,7 @@ void Render::run()
     cout << "Starting renderer .. " << endl;
     
     while(!isViewerClosed()){
-        //curScene = background.clone();
+        curScene = curScene.clone();
         DrawTree(curScene);
         std::vector<Obstacle*> staticObs = bigSpace->obstacles;
         for(Obstacle* curr: staticObs){
@@ -161,6 +161,8 @@ void Render::run()
         DrawPlan(bigUniverse->allSpaces.back()->plan, background);
 
         DrawRobot(background);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // sleep
     }
     /*
     vector<DynamObstacle*> dynamic_obs = map->get_dynam_obs_vec();

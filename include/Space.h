@@ -52,7 +52,7 @@ public:
     }
 
     void addDynamicObstacle(Obstacle* obs){
-        this->obstacles.push_back(obs);
+        this->dynObstacle.push_back(obs);
         return;
     }
 

@@ -51,7 +51,8 @@ void World::update(){
         robot->getRobotPose(robotX,robotY);
         if((robotX != destX || robotY != destY) && robot->getDestination(destX,destY)) // if destination exists
         {
-            double vdt = robotVel*updateRatems/1000;
+            //double vdt = robotVel*updateRatems/1000;
+            double vdt = 1;
             double dist = sqrt(pow(destX - robotX, 2) + pow(destY - robotY, 2));
 
             if(dist < vdt)
@@ -65,6 +66,6 @@ void World::update(){
             }
             robot->setRobotPose(newRobotX,newRobotY);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(updateRatems)); // sleep
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // sleep
     }
 } 
