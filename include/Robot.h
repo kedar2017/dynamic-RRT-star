@@ -124,7 +124,7 @@ void Robot::setDestination(Node* dest){
 bool Robot::robotAtGoal(){
     std::unique_lock<std::mutex> poseLock(poseMtx);
     double radialPos = sqrt(pow(this->x - this->goalNode->getPos()->posX,2)+pow(this->y - this->goalNode->getPos()->posY,2));
-    if (radialPos < 6){
+    if (radialPos < 2){
         return true;
     }
     return false;

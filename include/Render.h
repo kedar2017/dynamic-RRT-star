@@ -6,7 +6,7 @@
 #include <Space.h>
 #include <World.h>
 
-//cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
+cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
 
 using namespace std;
 
@@ -101,10 +101,12 @@ void Render::DrawTree(cv::Mat& scene){
         Node* currN = stack.front();
         stack.erase(stack.begin());
         for (Node* child:currN->children) {
-            if(flag==1)
-                cv::line(scene,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(255, 0, 0),2,cv::LINE_8);
-            else
-                cv::line(scene,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(255,0,0),2,cv::LINE_8);
+            if(flag==1){
+                cv::line(scene,cv::Point((currN->getPos()->posX)*5,(currN->getPos()->posY)*5),cv::Point((child->getPos()->posX)*5,(child->getPos()->posY)*5),cv::Scalar(255, 0, 0),4,cv::LINE_8);
+            }
+            else{
+                cv::line(scene,cv::Point((currN->getPos()->posX)*5,(currN->getPos()->posY)*5),cv::Point((child->getPos()->posX)*5,(child->getPos()->posY)*5),cv::Scalar(255,0,0),4,cv::LINE_8);
+            }
             stack.insert(stack.begin(),child);
         }
     }
@@ -117,7 +119,7 @@ void Render::DrawPlan(const vector<Node*>& plan, cv::Mat& scene){
     for(int i=0; i < plan.size()-1; ++i){
         cv::line(scene, cv::Point(5*plan[i]->getPos()->posX,5*plan[i]->getPos()->posY), 
                      cv::Point(5*plan[i+1]->getPos()->posX, 5*plan[i+1]->getPos()->posY),
-                     cv::Scalar(0,0,255), 4,cv::LINE_8);
+                     cv::Scalar(0,0,255), 6,cv::LINE_8);
     }
 }
 
@@ -138,9 +140,9 @@ void Render::run()
 {   
     cout << "Starting renderer .. " << endl;
     
+    DrawTree(background);
     while(!isViewerClosed()){
         curScene = curScene.clone();
-        DrawTree(curScene);
         std::vector<Obstacle*> staticObs = bigSpace->obstacles;
         for(Obstacle* curr: staticObs){
             vector<double> features = {curr->radius,5*curr->center->posX,5*curr->center->posY};
@@ -159,7 +161,6 @@ void Render::run()
         DrawStart(bigUniverse->allSpaces.back(),background);
         DrawPlan(bigSpace->plan, background);
         DrawPlan(bigUniverse->allSpaces.back()->plan, background);
-
         DrawRobot(background);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // sleep
