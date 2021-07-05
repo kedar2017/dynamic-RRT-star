@@ -1,6 +1,6 @@
 
 # dynamic-RRT-star
 
-<img width="496" alt="Screen Shot 2021-06-25 at 2 06 08 PM" src="https://user-images.githubusercontent.com/7802276/123485645-59faa380-d5bf-11eb-8e47-c98ea603471b.png">
+<img width="496" alt="Screen Shot 2021-06-25 at 2 06 08 PM" src="https://raw.githubusercontent.com/kedar2017/dynamic-RRT-star/main/Sample_Replanning_With_Dynamic_Obstacle.png">
 
-Sample dynamic obstacle avoidance using RRT replanning
+Sample replanning with dynamic obstacle on the optimal path to goal
