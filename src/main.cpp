@@ -223,7 +223,7 @@ void run(Space* space, Tree* tree, Node* root, Node* goalNode, int threshold, No
     }
 }
 
-Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int startPathPos, int goalPathPos, DynamObstacle* dynObstacle, int& currStepNew, Robot* robot){
+Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int startPathPos, int goalPathPos, DynamObstacle* dynObstacle, int& currStepNew,unsigned long int currTime, Robot* robot){
     std::vector<int> startNew{int(pathtoGoal[startPathPos]->getPos()->posX),int(pathtoGoal[startPathPos]->getPos()->posY)};
     std::vector<int> goalNew{int(pathtoGoal[goalPathPos]->getPos()->posX),int(pathtoGoal[goalPathPos]->getPos()->posY)};
     int winXNew = std::max(startNew[0],goalNew[0])+deltaWinX;
@@ -231,9 +231,8 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int 
     int startX = std::min(startNew[0],goalNew[0])-deltaWinX;
     int startY = std::min(startNew[1],goalNew[1])-deltaWinY;
 
-    unsigned long int currTime = robot->world->get_system_time();
     pair<double,double> posDynObs = dynObstacle->get_position(currTime);
-    std::vector<std::vector<int>> obstaclesNew{{10,60,60},{15,17,40},{15,50,80},{20,80,40},{3,int(posDynObs.first),int(posDynObs.second)}};
+    std::vector<std::vector<int>> obstaclesNew{{5,60,60},{5,17,40},{8,50,80},{8,80,40},{3,int(posDynObs.first),int(posDynObs.second)}};
 
     Space* spaceNew = new Space(startX, startY, winXNew, winYNew, startNew, goalNew, obstaclesNew);
     Position* posNew = new Position(spaceNew->start[0],spaceNew->start[1]);
@@ -243,7 +242,7 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int 
     Node* minStartNode;
     spaceNew->addDynamicObstacle(dynObstacle);
 
-    run(spaceNew, treeNew, rootNew, goalNodeNew,3,minStartNode);
+    run(spaceNew, treeNew, rootNew, goalNodeNew,5,minStartNode);
     spaceNew->tree = treeNew;
     printTree(treeNew,2);
     spaceNew->plan = generatePath(treeNew,rootNew,goalNodeNew,2);
@@ -343,7 +342,7 @@ void executePath(Space* space, Tree* tree, std::vector<Node*>& pathtoGoal,Robot*
             }
             if(nextIndx!=(currIndx-1)){
                 std::cout<<"Starting replanning"<<std::endl;
-                Space* spaceNew = RRTStar(20,20,pathtoGoal,currStep,nextIndx-1,currDynObs,currStep,robot);
+                Space* spaceNew = RRTStar(20,20,pathtoGoal,currStep,nextIndx-1,currDynObs,currStep,currTime,robot);
             }
             //cv::imshow("Side display", image);
             //cv::waitKey(10);
@@ -378,7 +377,7 @@ int main() {
     int winY = 100;
     std::vector<int> start{70,10};
     std::vector<int> goal{10,70};
-    std::vector<std::vector<int>> obstacles{{10,60,60},{15,17,40},{15,50,80},{20,80,40}};
+    std::vector<std::vector<int>> obstacles{{5,60,60},{5,17,40},{8,50,80},{8,80,40}};
     Space* space = new Space(0,0,winX, winY, start, goal, obstacles);
     Universe* universe = new Universe();
     universe->addSpace(space);
@@ -392,15 +391,18 @@ int main() {
     space->plan = generatePath(tree,root,goalNode,1);
 
     //space->addDynamicObstacle(new Obstacle(space->plan[27]->getPos(),3));
-    DynamObstacle* d1 = new DynamObstacle(6, false, 50, 35, 3, 95, 30, 100);
+    DynamObstacle* d1 = new DynamObstacle(6, false, 50, 35, 3, 95, 30, 50);
     //space->addDynamicObstacle(new Obstacle(space->plan[15]->getPos(),3));
-    DynamObstacle* d2 = new DynamObstacle(7, false, 45, 50, 3, 90, 90, 100);
+    DynamObstacle* d2 = new DynamObstacle(7, false, 45, 50, 3, 90, 90, 50);
 
-    DynamObstacle* d3 = new DynamObstacle(7, false, 60, 60, 3, 35,35, 100);
+    DynamObstacle* d3 = new DynamObstacle(7, false, 60, 60, 3, 35,35, 50);
+
+    DynamObstacle* d4 = new DynamObstacle(7, false, 30, 30, 3, 100,100, 50);
 
     space->addDynamicObstacle(d1);
     space->addDynamicObstacle(d2);
     space->addDynamicObstacle(d3);
+    space->addDynamicObstacle(d4);
 
     Robot* robot = new Robot(70,10,1,10,70);
     robot->setRobotNode(root);

@@ -1,4 +1,4 @@
 
-double DELTA = 5.000;
-double ballRad =3.000;
-int threshold = 3;
+double DELTA = 7.000;
+double ballRad =7.000;
+int threshold = 5;
