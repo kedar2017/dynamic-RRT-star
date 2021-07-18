@@ -4,6 +4,7 @@
 #include "random"
 #include "map"
 #include <Tree.h>
+#include <DynObstacle.h>
 
 class Space{
 public:
@@ -14,15 +15,17 @@ public:
     std::vector<int> goal;
     std::vector<std::vector<int> > points;
     std::vector<Obstacle*> obstacles;
-    std::vector<Obstacle*> dynObstacle;
+    std::vector<DynamObstacle*> dynObstacle;
     Tree* tree;
     std::vector<Node*> plan;
+    std::mutex mapMutex;
 
-    Space(int startX,int startY,int x, int y, std::vector<int> start, std::vector<int> goal, std::vector<std::vector<int>> obst,std::vector<int> dynObstacle){
+    Space(int startX,int startY,int x, int y, std::vector<int> start, std::vector<int> goal, std::vector<std::vector<int>> obst){
         this->winX = x;
         this->winY = y;
         this->start = start;
         this->goal = goal;
+        std::unique_lock<std::mutex> mtxLoc(mapMutex);
 
         for (int i = startX; i < winX; ++i) {
             for (int j = startY; j < winY; ++j){
@@ -30,7 +33,6 @@ public:
             }
         }
         initObstacles(obst);
-        initDynamicObstacles(dynObstacle);
         return;
     }
 
@@ -43,17 +45,14 @@ public:
         return;
     }
 
-    void initDynamicObstacles(std::vector<int> dynObs){
-
-        Position* centerPos = new Position(dynObs[1],dynObs[2]);
-        Obstacle* obstacleNew = new Obstacle(centerPos,dynObs[0]);
-        this->dynObstacle.push_back(obstacleNew);
+    void addDynamicObstacle(DynamObstacle* obs){
+        this->dynObstacle.push_back(obs);
         return;
     }
 
-    void addDynamicObstacle(Obstacle* obs){
-        this->dynObstacle.push_back(obs);
-        return;
+    vector<DynamObstacle*> getDynamObs(){
+        std::unique_lock<std::mutex> mtxLoc(mapMutex);
+        return this->dynObstacle;
     }
 
     std::vector<int> getRandomPoint(){

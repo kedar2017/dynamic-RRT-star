@@ -39,6 +39,7 @@ class Render
     // utility drawing functions
     void setFlag(int statVsDyn);
     void DrawObstacle(vector<double>& features, cv::Mat& scene);
+    void DrawDynaObstacle(vector<double>& features, cv::Mat& scene);
     void DrawRobot(cv::Mat& scene);
     void DrawGoal(Space* space,cv::Mat& scene);
     void DrawStart(Space* space,cv::Mat& scene);
@@ -64,6 +65,15 @@ void Render::setFlag(int statVsDyn){
 
 void Render::DrawObstacle(vector<double>& features, cv::Mat& scene){
     cv::Scalar colorCircle2(0,100,0);
+    //std::cout<<"Draw Obstacle"<<std::endl;
+    if(features.size() == 3)
+        cv::circle(scene,cv::Point(features[1],features[2]),5*features[0] , colorCircle2 , cv::FILLED);
+    else
+        cout << "ERROR: Something is wrong. Obst has "<< features.size() << " features" << endl;
+}
+
+void Render::DrawDynaObstacle(vector<double>& features, cv::Mat& scene){
+    cv::Scalar colorCircle2(0,100,100);
     //std::cout<<"Draw Obstacle"<<std::endl;
     if(features.size() == 3)
         cv::circle(scene,cv::Point(features[1],features[2]),5*features[0] , colorCircle2 , cv::FILLED);
@@ -132,7 +142,7 @@ void Render::DrawRobot(cv::Mat& scene){
     //std::cout<<"Draw Robot"<<std::endl;
     double x, y;
     robot->getRobotPose(x, y);
-    cv::circle(scene, cv::Point(5*x, 5*y), 8, cv::Scalar(106,13,173), cv::FILLED);
+    cv::circle(scene, cv::Point(5*x, 5*y), 10, cv::Scalar(106,13,173), cv::FILLED);
     return;
 }
 
@@ -140,28 +150,31 @@ void Render::run()
 {   
     cout << "Starting renderer .. " << endl;
     
-    DrawTree(background);
     while(!isViewerClosed()){
-        curScene = curScene.clone();
+        curScene = background.clone();
+        DrawTree(curScene);
+
         std::vector<Obstacle*> staticObs = bigSpace->obstacles;
         for(Obstacle* curr: staticObs){
             vector<double> features = {curr->radius,5*curr->center->posX,5*curr->center->posY};
-            DrawObstacle(features, background);
+            DrawObstacle(features, curScene);
         }
 
-        std::vector<Obstacle*> dynObs = bigUniverse->allSpaces.back()->dynObstacle;
-        for(Obstacle* curr: dynObs){
-            vector<double> features = {curr->radius,5*curr->center->posX,5*curr->center->posY};
-            DrawObstacle(features, background);
+        unsigned long int currTime = robot->world->get_system_time();
+        std::vector<DynamObstacle*> dynObs = bigUniverse->allSpaces.back()->getDynamObs();
+        
+        for(DynamObstacle* curr: dynObs){
+            pair<double,double> dynObsPos = curr->get_position(currTime);
+            vector<double> features = {curr->radius,5*dynObsPos.first,5*dynObsPos.second};
+            DrawDynaObstacle(features, curScene);
         }
-
-        DrawGoal(bigSpace,background);
-        DrawStart(bigSpace,background);
-        DrawGoal(bigUniverse->allSpaces.back(),background);
-        DrawStart(bigUniverse->allSpaces.back(),background);
-        DrawPlan(bigSpace->plan, background);
-        DrawPlan(bigUniverse->allSpaces.back()->plan, background);
-        DrawRobot(background);
+        DrawGoal(bigSpace,curScene);
+        DrawStart(bigSpace,curScene);
+        DrawGoal(bigUniverse->allSpaces.back(),curScene);
+        DrawStart(bigUniverse->allSpaces.back(),curScene);
+        DrawPlan(bigSpace->plan, curScene);
+        DrawPlan(bigUniverse->allSpaces.back()->plan, curScene);
+        DrawRobot(curScene);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // sleep
     }
@@ -210,5 +223,5 @@ bool Render::isViewerClosed(){
 
 cv::Mat Render::getBackground(){
     std::unique_lock<std::mutex> showViewerLock(showViewerMutex);
-    return background;
+    return curScene;
 }
