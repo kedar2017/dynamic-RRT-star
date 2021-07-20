@@ -317,7 +317,7 @@ bool DynamObstacle::radialPosCheckFloat(Position* checkPoint, Position* center, 
 }
 
 bool DynamObstacle::insidePolygon(Position* point, Position* robotPos){
-    if (radialPosCheckFloat(point, robotPos, 2)){
+    if (radialPosCheckFloat(point, robotPos, 2+3)){
         return true;
     }
     return false;
@@ -359,7 +359,7 @@ bool DynamObstacle::linePassesRobot(Position* start, Position* end, Position* ro
     if (insidePolygon(start,robotPos) || insidePolygon(end,robotPos))
         return true;
     
-    if (distToLine(robotPos,start,end) < 2){
+    if (distToLine(robotPos,start,end) < 2+3){
         int lambd = lambdaCalc(start,end,robotPos);
         Position pointOnLine = Position(lambd*start->posX+(1-lambd)*end->posX,lambd*start->posY+(1-lambd)*end->posY);
         Position vecComm = Position(pointOnLine.posX-robotPos->posX,pointOnLine.posY-robotPos->posY);

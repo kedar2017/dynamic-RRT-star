@@ -242,6 +242,8 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int 
     Node* minStartNode;
     spaceNew->addDynamicObstacle(dynObstacle);
 
+    DELTA = 6.00;
+    ballRad = 6.00;
     run(spaceNew, treeNew, rootNew, goalNodeNew,5,minStartNode);
     spaceNew->tree = treeNew;
     printTree(treeNew,2);
@@ -391,20 +393,20 @@ int main() {
     space->plan = generatePath(tree,root,goalNode,1);
 
     //space->addDynamicObstacle(new Obstacle(space->plan[27]->getPos(),3));
-    DynamObstacle* d1 = new DynamObstacle(6, false, 50, 35, 3, 95, 30, 50);
+    DynamObstacle* d1 = new DynamObstacle(6, false, 65 , 30, 3, 50, 35,50);
     //space->addDynamicObstacle(new Obstacle(space->plan[15]->getPos(),3));
-    DynamObstacle* d2 = new DynamObstacle(7, false, 45, 50, 3, 90, 90, 50);
+    DynamObstacle* d2 = new DynamObstacle(7, false, 70,70,3,45, 50, 50);
 
     DynamObstacle* d3 = new DynamObstacle(7, false, 60, 60, 3, 35,35, 50);
 
-    DynamObstacle* d4 = new DynamObstacle(7, false, 30, 30, 3, 100,100, 50);
+    DynamObstacle* d4 = new DynamObstacle(7, false, 40,40,3,40, 60, 50);
 
     space->addDynamicObstacle(d1);
     space->addDynamicObstacle(d2);
     space->addDynamicObstacle(d3);
     space->addDynamicObstacle(d4);
 
-    Robot* robot = new Robot(70,10,1,10,70);
+    Robot* robot = new Robot(70,10,2,10,70);
     robot->setRobotNode(root);
     robot->pathtoGoal = space->plan;
     robot->currNode = robot->pathtoGoal.back();

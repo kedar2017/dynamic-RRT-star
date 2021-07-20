@@ -148,6 +148,7 @@ vector<Node*> Robot::getLocalTree(){
 }
 
 vector<Node*> Robot::getPlan(){
+    std::unique_lock<std::mutex> poseLock(poseMtx);
     return this->pathtoGoal;
 }
 

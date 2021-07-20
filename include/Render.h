@@ -45,6 +45,7 @@ class Render
     void DrawStart(Space* space,cv::Mat& scene);
     void DrawTree(cv::Mat& scene);
     void DrawPlan(const vector<Node*>& plan, cv::Mat& scene);
+    void DrawReplanStart(vector<Node*> replanPath,cv::Mat& scene);
 
     // utils to get, set shared vars
     bool requestViewerClosure();
@@ -73,7 +74,7 @@ void Render::DrawObstacle(vector<double>& features, cv::Mat& scene){
 }
 
 void Render::DrawDynaObstacle(vector<double>& features, cv::Mat& scene){
-    cv::Scalar colorCircle2(0,100,100);
+    cv::Scalar colorCircle2(255,219,57);
     //std::cout<<"Draw Obstacle"<<std::endl;
     if(features.size() == 3)
         cv::circle(scene,cv::Point(features[1],features[2]),5*features[0] , colorCircle2 , cv::FILLED);
@@ -89,6 +90,16 @@ void Render::DrawGoal(Space* space,cv::Mat& scene){
     cv::circle(scene, cv::Point(5*gx, 5*gy), 7, cv::Scalar(0,255,0), cv::FILLED);
     return; 
 }
+
+void Render::DrawReplanStart(vector<Node*> replanPath,cv::Mat& scene){
+    int gx, gy;
+    gx = replanPath.back()->getPos()->posX;
+    gy = replanPath.back()->getPos()->posY;
+    //std::cout<<"Draw Start"<<std::endl;
+    cv::circle(scene, cv::Point(5*gx, 5*gy), 7, cv::Scalar(96,255,255), cv::FILLED);
+    return;
+}
+
 
 void Render::DrawStart(Space* space,cv::Mat& scene){
     int gx, gy;
@@ -168,15 +179,14 @@ void Render::run()
             vector<double> features = {curr->radius,5*dynObsPos.first,5*dynObsPos.second};
             DrawDynaObstacle(features, curScene);
         }
+        vector<Node*> replanPath = robot->getPlan();
         DrawGoal(bigSpace,curScene);
         DrawStart(bigSpace,curScene);
-        DrawGoal(bigUniverse->allSpaces.back(),curScene);
-        DrawStart(bigUniverse->allSpaces.back(),curScene);
-        DrawPlan(bigSpace->plan, curScene);
-        DrawPlan(bigUniverse->allSpaces.back()->plan, curScene);
+        DrawReplanStart(replanPath,curScene);
+        DrawPlan(replanPath,curScene);
         DrawRobot(curScene);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // sleep
+        std::this_thread::sleep_for(std::chrono::milliseconds(500)); // sleep
     }
     /*
     vector<DynamObstacle*> dynamic_obs = map->get_dynam_obs_vec();
