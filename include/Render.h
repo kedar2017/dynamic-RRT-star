@@ -56,7 +56,7 @@ class Render
 Render::Render(Space* ptrSpace, Universe* ptrUni, World* ptrWorld, Robot* ptrRobot,cv::Mat& scene)
     : bigSpace(ptrSpace), closeViewer(false), refresh_rate(10), bigUniverse(ptrUni), bigWorld(ptrWorld), robot(ptrRobot), background(scene)
 {
-    std::cout<<"Initialized renderer..."<<std::endl;
+    //std::cout<<"Initialized renderer..."<<std::endl;
 }
 
 void Render::setFlag(int statVsDyn){
@@ -117,7 +117,7 @@ void Render::DrawTree(cv::Mat& scene){
     stack.push_back(root);
 
     //std::cout<<"Draw Tree"<<std::endl;
-
+    
     while (!stack.empty()) {
         Node* currN = stack.front();
         stack.erase(stack.begin());
@@ -163,7 +163,7 @@ void Render::run()
     
     while(!isViewerClosed()){
         curScene = background.clone();
-        DrawTree(curScene);
+        //DrawTree(curScene);
 
         std::vector<Obstacle*> staticObs = bigSpace->obstacles;
         for(Obstacle* curr: staticObs){
@@ -186,37 +186,8 @@ void Render::run()
         DrawPlan(replanPath,curScene);
         DrawRobot(curScene);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500)); // sleep
+        //std::this_thread::sleep_for(std::chrono::milliseconds(500)); // sleep
     }
-    /*
-    vector<DynamObstacle*> dynamic_obs = map->get_dynam_obs_vec();
-
-    while(!isViewerClosed()){
-        cv::Mat cur_scene = background.clone();
-        
-        // Get dynamic obstacles and draw them on canvas
-        unsigned long int cur_time = world->get_system_time();
-        for(auto& cur_dyn_obst: dynamic_obs){
-            // Draw the dynamic obstacle
-            vector<double> features = cur_dyn_obst->get_obs_feature(cur_time);
-            DrawObstacle(features, cur_scene);
-        }
-
-        Node* cur_robot_node = robot->getRobotNode();
-        DrawTree(cur_robot_node, cur_scene);
-
-        DrawPlan(robot->getPlan(), cur_scene);
-
-        // draw replan goal
-        Node* replan_goal = robot->getReplanGoal();
-        if(replan_goal) circle(cur_scene, cv::Point2f((replan_goal->x*scale_factor), (map_height - replan_goal->y)*scale_factor), (int)(0.8*scale_factor), cv::Scalar(100,100,0), CV_FILLED);
-
-        DrawRobot(cur_scene);   // draw the robot
-
-        cv::imshow("Environment display", cur_scene);
-        cv::waitKey(refresh_rate);
-    }
-    */
     return;
 }
 

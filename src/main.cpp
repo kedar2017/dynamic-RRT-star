@@ -165,12 +165,10 @@ void printTree(Tree* tree,int flag){
         Node* currN = stack.front();
         stack.erase(stack.begin());
         for (Node* child:currN->children) {
-            /*
             if(flag==1)
                 cv::line(image,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(255, 0, 0),2,cv::LINE_8);
             else
                 cv::line(image,cv::Point((currN->pos->posX)*5,(currN->pos->posY)*5),cv::Point((child->pos->posX)*5,(child->pos->posY)*5),cv::Scalar(0, 0, 255),2,cv::LINE_8);
-            */
             stack.insert(stack.begin(),child);
         }
     }
@@ -200,8 +198,7 @@ void run(Space* space, Tree* tree, Node* root, Node* goalNode, int threshold, No
     space->removeNodeFreeSpace(root);
     int iterations = 0;
 
-    //cv::Mat image(500,500, CV_8UC3, cv::Scalar(0,0,0));
-
+    Render* test = new Render(NULL,NULL,NULL,NULL,image);
 
     while (checkGoaltoTree(tree,goalNode,&threshold)){
         iterations++;
@@ -220,6 +217,20 @@ void run(Space* space, Tree* tree, Node* root, Node* goalNode, int threshold, No
         if(iterations==1) minStartNode=qMin;
         updateFreeSpace(space,removeNodefromSpace);
         reWire(space,tree,removeNodefromSpace);
+        
+        //Plotting the tree during construction just for the blog, otherwise delete 
+        /*
+        printTree(tree,2);
+        std::vector<Obstacle*> staticObs = space->obstacles;
+        for(Obstacle* curr: staticObs){
+            vector<double> features = {curr->radius,5*curr->center->posX,5*curr->center->posY};
+            test->DrawStart(space,image);
+            test->DrawGoal(space,image);
+            test->DrawObstacle(features,image);
+        }
+        cv::imshow("Environment display", image);
+        cv::waitKey(10);
+        */
     }
 }
 
@@ -246,7 +257,6 @@ Space* RRTStar(int deltaWinX, int deltaWinY, std::vector<Node*>& pathtoGoal,int 
     ballRad = 6.00;
     run(spaceNew, treeNew, rootNew, goalNodeNew,5,minStartNode);
     spaceNew->tree = treeNew;
-    printTree(treeNew,2);
     spaceNew->plan = generatePath(treeNew,rootNew,goalNodeNew,2);
 
     std::cout<<"old path size"<<std::endl;
@@ -388,17 +398,18 @@ int main() {
     Node* root = new Node(pos);
     Tree* tree = new Tree(root);
     Node* minStartNode;
+
+
+    cv::Mat background = cv::Mat(500, 500, CV_8UC3, cv::Scalar(0,0,0));
+    cv::Mat image = cv::Mat(500, 500, CV_8UC3, cv::Scalar(0,0,0));
+
     run(space, tree, root, goalNode, threshold, minStartNode);
     space->tree = tree;
     space->plan = generatePath(tree,root,goalNode,1);
 
-    //space->addDynamicObstacle(new Obstacle(space->plan[27]->getPos(),3));
     DynamObstacle* d1 = new DynamObstacle(6, false, 65 , 30, 3, 50, 35,50);
-    //space->addDynamicObstacle(new Obstacle(space->plan[15]->getPos(),3));
-    DynamObstacle* d2 = new DynamObstacle(7, false, 70,70,3,45, 50, 50);
-
-    DynamObstacle* d3 = new DynamObstacle(7, false, 60, 60, 3, 35,35, 50);
-
+    DynamObstacle* d2 = new DynamObstacle(7, false, 60,60,3,45, 50, 50);
+    DynamObstacle* d3 = new DynamObstacle(7, false, 60,60, 3, 35,35, 50);
     DynamObstacle* d4 = new DynamObstacle(7, false, 40,40,3,40, 60, 50);
 
     space->addDynamicObstacle(d1);
@@ -409,17 +420,16 @@ int main() {
     Robot* robot = new Robot(70,10,2,10,70);
     robot->setRobotNode(root);
     robot->pathtoGoal = space->plan;
-    robot->currNode = robot->pathtoGoal.back();
+    //robot->currNode = robot->pathtoGoal.back();
+    robot->currNode = root;
     World* world = new World(robot,10000);
     robot->setWorld(world);
-
-    cv::Mat background = cv::Mat(500, 500, CV_8UC3, cv::Scalar(0,0,0));
 
     Render* render = new Render(space,universe,world,robot,background);
     render->setFlag(1);
 
-    std::thread renderThread(&Render::run,render);
     std::thread worldUpdateThread(&World::update, world);
+    std::thread renderThread(&Render::run,render);
     executePath(space,tree,robot->pathtoGoal,robot,render);
     worldUpdateThread.join();
     renderThread.join();
